@@ -1,6 +1,6 @@
-# 동작 방식
+# The WebSocket handshake
 
-## Hand Shake
+## Client handshake request
 
 `Hand Shake`란 클라이언트와 서버 간에 Web Socket 연결을 설정하는 초기 프로세스이다.  
 HTTP 요청으로 시작하여 연결을 Web Socket으로 업그레이드한다.
@@ -98,5 +98,38 @@ Sec-WebSocket-Protocol: soap
 
 ### `Sec-WebSocket-Version`
 
-즉, Socket.io를 활용한 통신은 정확한 표현이 아니다.
-Socket.io를 활용한 WebSocket 통신이라고 해야한다.
+만약, 헤더가 잘못됐거나 이해될 수 없는 것이라면 서버는 400 Bad Request 에러를 보낸다.  
+만약 서버가 WebSocket의 버전을 이해하지 못한다면 `Sec-WebSocket-Version`을 사용하여 버전을 명시해서 보내줘야 한다.
+
+## Server handshake response
+
+서버가 클라이언트로부터 handshake request를 받았을 때, 서버는 다음과 같은 응답을 보낸다.
+
+```HTTP
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+또한, 서버는 여기서 extension/sub-protocol을 정할 수 있다.
+
+`Sec-WebSocket-Accept`는 클라이언트가 보낸 `Sec-WebSocket-Key`로부터 끌어낸다.  
+`Sec-WebSocket-Key` 값과 magic string이라 불리는 `"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"`를 이어 만든 `SHA-1 hash`의 결과값을 얻고, 이를 `base64`로 인코딩하여 만들어낸다.
+
+서버가 이 응답을 보내면 그 때부터 handshake가 완료되고, 데이터를 주고받을 수 있게 된다.  
+물론, 서버는 handshake에 응답하기 전에 다른 status code를 통해 인증, 리다이렉트 처리를 하거나 `Set-Cookie` 같은 헤더를 보낼 수 있다.
+
+# Keeping track of clients
+
+서버는 클라이언트의 소켓을 기억하고 있기 때문에, 이미 handshake를 완료한 상태라면 다시 할 필요가 없다.  
+동일한 클라이언트 IP 주소는 여러 번 연결을 시도할 수 있다.  
+하지만 너무 많은 연결을 시도하면 서버가 `Denial-of-Service attacks`로 부터 스스로를 지키기 위해 이를 거부할 수 있다.
+
+# Exchanging data frames
+
+# Socket.io
+
+# Reference
+
+- [WebSocket 프로토콜: 작동 방식에 대한 심층 분석 - AppMaster](https://appmaster.io/ko/blog/websocket-peurotokol-jagdong-bangsig)
